@@ -1,79 +1,102 @@
-const dropDown = document.querySelector('.dropdownMenu');
-const dropOptions = document.querySelector('.drop-options');
-const toggle = document.querySelector('.toggle');
-const countries = document.querySelector('.countries');
+const toggle = document.querySelector(".toggle");
+const dropdownMenu = document.querySelector(".dropdownMenu");
+const dropOptions = document.querySelector(".drop-options");
+const regions = document.querySelectorAll(".region");
+const countriesContainer = document.querySelector(".countries");
+const searchInput = document.querySelector(".search");
+
+let allCountries = [];
+let selectedRegion = "All";
 
 
-toggle.addEventListener('click', () => {
-  document.body.classList.toggle('dark-mode');
-  toggle.classList.toggle('dark-mode');
-  dropOptions.style.backgroundColor = "black";
-  dropOptions.style.color = "white";
+toggle.addEventListener("click", () => {
+  document.body.classList.toggle("dark-mode");
 });
 
 
-dropDown.addEventListener('click', () => {
-  dropOptions.classList.toggle('show-options');
+dropdownMenu.addEventListener("click", () => {
+  dropOptions.classList.toggle("show-options");
 });
 
 
-async function getCountry() {
+async function getCountries() {
 
-  const URL = await fetch('https://restcountries.com/v3.1/all?fields=name,capital,flags,population,region');
-  const res = await URL.json();
+  const res = await fetch(
+    "https://restcountries.com/v3.1/all?fields=name,capital,flags,population,region"
+  );
 
-  res.forEach(country => {
-    showCountry(country);
-  });
+  const data = await res.json();
 
+  allCountries = data;
+
+  displayCountries(allCountries);
 }
 
 
-function showCountry(data) {
+function displayCountries(countryArray) {
 
-  const country = document.createElement('div');
-  country.classList.add('country');
+  countriesContainer.innerHTML = "";
 
-  country.innerHTML = `
+  countryArray.forEach(country => {
+
+    const card = document.createElement("div");
+    card.classList.add("country");
+
+    card.innerHTML = `
       <div class="country-img">
-        <img src="${data.flags.png}" alt="">
+        <img src="${country.flags.png}" alt="">
       </div>
 
       <div class="country-details">
-        <h4 class = "countryName">${data.name.common}</h4>
-        <div class="country-details-inside">
-          <p><strong>Population:</strong> ${data.population}</p>
-          <p><strong>Region:</strong> ${data.region}</p>
-          <p><strong>Capital:</strong> ${data.capital ? data.capital[0] : "N/A"}</p>
-        </div>
+        <h3 class="countryName">${country.name.common}</h3>
+
+        <p><strong>Population:</strong> ${country.population.toLocaleString()}</p>
+        <p><strong>Region:</strong> ${country.region}</p>
+        <p><strong>Capital:</strong> ${country.capital ? country.capital[0] : "N/A"}</p>
       </div>
-  `;
+    `;
 
-  countries.appendChild(country);
+    countriesContainer.appendChild(card);
 
+  });
 }
 
 
-const search = document.querySelector('.Search');
+searchInput.addEventListener("input", filterCountries);
 
-search.addEventListener("input", e => {
 
-  const countryName = document.getElementsByClassName('countryName');
+regions.forEach(region => {
 
-  Array.from(countryName).forEach(country => {
+  region.addEventListener("click", () => {
 
-    if(country.innerText.toLowerCase().includes(search.value.toLowerCase())){
-      country.parentElement.parentElement.style.display = "block";
-    }
-    else{
-      country.parentElement.parentElement.style.display = "none";
-    }
+    selectedRegion = region.innerText;
+
+    filterCountries();
 
   });
 
 });
 
 
+function filterCountries() {
+
+  const searchText = searchInput.value.toLowerCase();
+
+  const filtered = allCountries.filter(country => {
+
+    const matchSearch =
+      country.name.common.toLowerCase().includes(searchText);
+
+    const matchRegion =
+      selectedRegion === "All" || country.region === selectedRegion;
+
+    return matchSearch && matchRegion;
+
+  });
+
+  displayCountries(filtered);
+
+}
 
 
-getCountry();
+getCountries();
